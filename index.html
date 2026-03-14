@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LIFE: A to Z | Reality Simulator</title>
+    <style>
+        :root { --bg: #050505; --text: #b0b0b0; --accent: #00ff41; --danger: #ff3e3e; --warning: #ffae00; }
+        body { background: var(--bg); color: var(--text); font-family: 'Courier New', monospace; display: flex; justify-content: center; padding: 20px; line-height: 1.4; }
+        #game-container { max-width: 650px; width: 100%; border: 1px solid #222; padding: 30px; background: #0a0a0a; }
+        .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 25px; font-size: 0.85rem; color: var(--accent); }
+        .stat-box { border: 1px solid #222; padding: 10px; text-align: center; }
+        .log { height: 350px; overflow-y: auto; margin-bottom: 20px; padding: 10px; background: #000; border: 1px inset #111; font-size: 0.9rem; }
+        .log-entry { margin-bottom: 8px; border-left: 2px solid #222; padding-left: 10px; animation: fadeIn 0.4s; }
+        .choices { display: flex; flex-direction: column; gap: 12px; }
+        button { background: #000; border: 1px solid var(--accent); color: var(--accent); padding: 12px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; }
+        button:hover:not(:disabled) { background: var(--accent); color: #000; font-weight: bold; }
+        button:disabled { border-color: #333; color: #444; cursor: not-allowed; }
+        .death-screen { color: var(--danger); text-align: center; border: 2px solid var(--danger); padding: 20px; }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: #222; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div class="stats">
+        <div class="stat-box">AGE<br><span id="age">0</span></div>
+        <div class="stat-box">HEALTH<br><span id="health">100</span></div>
+        <div class="stat-box">WEALTH<br><span id="wealth">0</span></div>
+        <div class="stat-box">WILL<br><span id="will">100</span></div>
+    </div>
+
+    <div id="log" class="log">
+        <div class="log-entry">SYSTEM READY. WAITING FOR BIOLOGICAL START...</div>
+    </div>
+
+    <div id="action-area" class="choices">
+        <button onclick="startGame()">Commence Life Sequence</button>
+    </div>
+</div>
+
+<script>
+    // CORE STATE - Persists offline via localStorage
+    let state = JSON.parse(localStorage.getItem('life_sim_state')) || {
+        age: 0, health: 100, wealth: 0, will: 100,
+        tags: [], dead: false, started: false, history: []
+    };
+
+    const logEl = document.getElementById('log');
+
+    function save() {
+        localStorage.setItem('life_sim_state', JSON.stringify(state));
+    }
+
+    function updateUI() {
+        document.getElementById('age').innerText = state.age;
+        document.getElementById('health').innerText = state.health;
+        document.getElementById('wealth').innerText = Math.floor(state.wealth);
+        document.getElementById('will').innerText = Math.floor(state.will);
+        logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function addToLog(text, color = 'var(--text)') {
+        const div = document.createElement('div');
+        div.className = 'log-entry';
+        div.style.color = color;
+        div.innerHTML = `> [AGE ${state.age}] ${text}`;
+        logEl.appendChild(div);
+    }
+
+    function startGame() {
+        if(!state.started) {
+            // Phase A: The Lottery of Birth
+            const tiers = [
+                {name: "Poverty", wealth: 0, will: 60, tag: "Scarcity_Mindset"},
+                {name: "Working Class", wealth: 500, will: 85, tag: "Pragmatic"},
+                {name: "Affluent", wealth: 5000, will: 100, tag: "Safety_Net"}
+            ];
+            const birth = tiers[Math.floor(Math.random() * tiers.length)];
+            state.wealth = birth.wealth;
+            state.will = birth.will;
+            state.tags.push(birth.tag);
+            state.started = true;
+            addToLog(`BIOLOGICAL SEED PLANTED. Tier: ${birth.name}.`, 'var(--accent)');
+        }
+        processYear();
+    }
+
+    function processYear() {
+        if (state.health <= 0) return die();
+        
+        // Biological Entropy (The Reality Way)
+        if (state.age > 30) state.health -= 1;
+        if (state.age > 50) state.health -= 2;
+        if (state.tags.includes('Smoker')) state.health -= 2;
+        if (state.tags.includes('Stress_Debt')) state.health -= 1;
+
+        renderChoices();
+        updateUI();
+        save();
+    }
+
+    function makeChoice(label, healthMod, wealthMod, willMod, newTag) {
+        state.health += healthMod;
+        state.wealth += wealthMod;
+        state.will += willMod;
+        if(newTag) state.tags.push(newTag);
+        
+        addToLog(label);
+        state.age++;
+        processYear();
+    }
+
+    function renderChoices() {
+        const area = document.getElementById('action-area');
+        area.innerHTML = '';
+
+        // PHASE LOGIC (A to Z)
+        if (state.age < 13) {
+            createBtn("Focus on school (Future Marketability)", 0, 0, -5, "Studious");
+            createBtn("Play and explore (Social Capital)", 0, 0, 5, "Creative");
+        } 
+        else if (state.age < 21) {
+            createBtn("Work part-time (Build Cash)", -2, 200, -10, "Worker");
+            createBtn("Experiment with vices (Lose Health)", -10, -50, 20, "Smoker");
+            createBtn("Social Isolation (Save Willpower)", 0, 0, 10, "Loner");
+        } 
+        else if (state.age < 60) {
+            // THE BRUTAL ADULTHOOD YEARS
+            createBtn("Corporate Grind (Wealth++, Health--)", -8, 1200, -15, "Stress_Debt");
+            createBtn("Focus on Relationships (Will++, Wealth--)", 0, -400, 15, "Connected");
+            createBtn("Minimalist Living (Health++, Wealth-)", 5, -100, 5, "Balanced");
+            
+            // Random Reality Event
+            if(Math.random() > 0.8) triggerRandomEvent();
+        } 
+        else {
+            // THE SUNSET YEARS
+            createBtn("Aggressive Medical Treatment (-Wealth)", 10, -2000, -20, "Medicalized");
+            createBtn("Accept the End (Reflect)", 0, 0, 10, "Peaceful");
+        }
+    }
+
+    function createBtn(text, h, w, wl, tag) {
+        const btn = document.createElement('button');
+        btn.innerText = text;
+        btn.onclick = () => makeChoice(text, h, w, wl, tag);
+        document.getElementById('action-area').appendChild(btn);
+    }
+
+    function triggerRandomEvent() {
+        const events = [
+            {t: "Economic Recession hit.", h: 0, w: -1000, wl: -20},
+            {t: "Family health crisis.", h: -5, w: -500, wl: -10},
+            {t: "Unexpected promotion.", h: -5, w: 1500, wl: -5},
+            {t: "Minor injury.", h: -15, w: -200, wl: -5}
+        ];
+        const e = events[Math.floor(Math.random() * events.length)];
+        state.health += e.h;
+        state.wealth += e.w;
+        state.will += e.wl;
+        addToLog(`RANDOM EVENT: ${e.t}`, 'var(--warning)');
+    }
+
+    function die() {
+        state.dead = true;
+        updateUI();
+        localStorage.removeItem('life_sim_state'); // Death is the end
+        const area = document.getElementById('action-area');
+        area.innerHTML = `
+            <div class="death-screen">
+                <h2>SYSTEM TERMINATED</h2>
+                <p>OBITUARY: Lived ${state.age} years.</p>
+                <p>RECORDS: ${[...new Set(state.tags)].join(', ')}</p>
+                <button onclick="location.reload()">Begin New Life Cycle</button>
+            </div>
+        `;
+        addToLog("CRITICAL FAILURE: Vital signs zero. Logic audit complete.", "var(--danger)");
+    }
+
+    // Auto-resume if existing save found
+    if(state.started && !state.dead) {
+        addToLog("RE-INITIALIZING PREVIOUS BIOLOGICAL RECORD...", "var(--accent)");
+        processYear();
+    }
+</script>
+</body>
+</html>
