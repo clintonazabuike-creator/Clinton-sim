@@ -4,3 +4,26 @@ canvas {
     image-rendering: crisp-edges;
     display: block;
 }
+.divider {
+    height: 1px;
+    background: rgba(212, 175, 55, 0.2);
+    margin: 15px 0;
+}
+
+.trait-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 800;
+    margin: 4px;
+    text-transform: uppercase;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    color: #000; /* Black text on bright backgrounds */
+}
+
+#bio-card h1 {
+    font-size: 22px;
+    text-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
+}
