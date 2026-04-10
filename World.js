@@ -5,7 +5,7 @@ export const BIOMES = {
     GRASS: { id: 2, color: '#34a853', speedMult: 1.0 },
     FOREST:{ id: 3, color: '#0d5a2b', speedMult: 0.7 },
     ROCK:  { id: 4, color: '#5f6368', speedMult: 0.6 },
-    ROAD:  { id: 5, color: '#444444', speedMult: 1.5 } // Roads make people walk faster
+    ROAD:  { id: 5, color: '#333333', speedMult: 1.6 }
 };
 
 export class World {
@@ -14,6 +14,7 @@ export class World {
         this.height = height;
         this.tileSize = tileSize;
         this.grid = [];
+        this.kingdoms = []; // Store Kingdom Data (Color, KingID, etc.)
         this.generate();
     }
 
@@ -22,20 +23,9 @@ export class World {
             this.grid[x] = [];
             for (let y = 0; y < this.height; y++) {
                 let val = Math.sin(x * 0.1) + Math.cos(y * 0.1);
-                let biome = BIOMES.GRASS;
-                if (val < -0.8) biome = BIOMES.WATER;
-                else if (val < -0.4) biome = BIOMES.SAND;
-                this.grid[x][y] = { biome, structure: null };
+                let biome = val < -0.5 ? BIOMES.WATER : BIOMES.GRASS;
+                this.grid[x][y] = { biome, structure: null, territory: null };
             }
-        }
-    }
-
-    // This allows humans to "Paint" the world
-    setTile(px, py, biomeType) {
-        const x = Math.floor(px / this.tileSize);
-        const y = Math.floor(py / this.tileSize);
-        if (this.grid[x] && this.grid[x][y]) {
-            this.grid[x][y].biome = BIOMES[biomeType];
         }
     }
 
@@ -46,21 +36,23 @@ export class World {
                 ctx.fillStyle = cell.biome.color;
                 ctx.fillRect(x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
 
-                if (cell.structure) this.drawPixelHouse(ctx, x * this.tileSize, y * this.tileSize, cell.structure.type);
+                // Draw Borders
+                if (cell.territory) {
+                    ctx.globalAlpha = 0.3;
+                    ctx.fillStyle = cell.territory.color;
+                    ctx.fillRect(x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
+                    ctx.globalAlpha = 1.0;
+                }
+
+                if (cell.structure) this.drawPixelBuilding(ctx, x * this.tileSize, y * this.tileSize, cell.structure);
             }
         }
     }
 
-    drawPixelHouse(ctx, x, y, type) {
-        ctx.fillStyle = "#5d4037"; // Wood Wall
-        ctx.fillRect(x + 4, y + 8, 24, 20);
-        ctx.fillStyle = "#2e1507"; // Roof
-        ctx.beginPath();
-        ctx.moveTo(x, y + 8);
-        ctx.lineTo(x + 16, y);
-        ctx.lineTo(x + 32, y + 8);
-        ctx.fill();
-        ctx.fillStyle = "#ffeb3b"; // Window pixel
-        ctx.fillRect(x + 10, y + 15, 4, 4);
+    drawPixelBuilding(ctx, x, y, struct) {
+        ctx.fillStyle = struct.type === 'castle' ? "#999" : "#5d4037";
+        ctx.fillRect(x + 2, y + 4, 28, 24);
+        ctx.fillStyle = "#222"; // Door
+        ctx.fillRect(x + 12, y + 18, 8, 10);
     }
 }
