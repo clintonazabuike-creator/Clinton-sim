@@ -1,25 +1,53 @@
-// js/World.js (Add to the World class)
+export const BIOMES = {
+    WATER: { id: 0, color: '#1a73e8', speedMult: 0.4 },
+    SAND:  { id: 1, color: '#f1dca7', speedMult: 0.8 },
+    GRASS: { id: 2, color: '#34a853', speedMult: 1.0 },
+    FOREST:{ id: 3, color: '#0d5a2b', speedMult: 0.7 },
+    ROCK:  { id: 4, color: '#5f6368', speedMult: 0.6 }
+};
 
 export class World {
-    // ... existing constructor and generate methods ...
+    constructor(width, height, tileSize) {
+        this.width = width;
+        this.height = height;
+        this.tileSize = tileSize;
+        this.grid = [];
+        this.generate();
+    }
+
+    generate() {
+        for (let x = 0; x < this.width; x++) {
+            this.grid[x] = [];
+            for (let y = 0; y < this.height; y++) {
+                let val = Math.sin(x * 0.1) + Math.cos(y * 0.1);
+                let biome = BIOMES.GRASS;
+                if (val < -0.8) biome = BIOMES.WATER;
+                else if (val < -0.4) biome = BIOMES.SAND;
+                else if (val > 0.8) biome = BIOMES.ROCK;
+                else if (val > 0.4) biome = BIOMES.FOREST;
+
+                this.grid[x][y] = { biome, elevation: val, structure: null };
+            }
+        }
+    }
 
     placeStructure(x, y, type) {
-        const gridX = Math.floor(x / this.tileSize);
-        const gridY = Math.floor(y / this.tileSize);
-
-        if (this.grid[gridX] && this.grid[gridX][gridY]) {
-            const tile = this.grid[gridX][gridY];
-            // Only build on Grass or Forest
-            if (tile.biome.id === 2 || tile.biome.id === 3) {
-                tile.structure = {
-                    type: type, // 'hut', 'farm', 'tower'
-                    health: 100,
-                    owner: null
-                };
+        const gx = Math.floor(x / this.tileSize);
+        const gy = Math.floor(y / this.tileSize);
+        if (this.grid[gx] && this.grid[gx][gy]) {
+            const tile = this.grid[gx][gy];
+            if ((tile.biome.id === 2 || tile.biome.id === 3) && !tile.structure) {
+                tile.structure = { type, health: 100 };
                 return true;
             }
         }
         return false;
+    }
+
+    getTileAt(px, py) {
+        const x = Math.floor(px / this.tileSize);
+        const y = Math.floor(py / this.tileSize);
+        return (this.grid[x] && this.grid[x][y]) ? this.grid[x][y] : null;
     }
 
     render(ctx) {
@@ -28,19 +56,9 @@ export class World {
                 const cell = this.grid[x][y];
                 ctx.fillStyle = cell.biome.color;
                 ctx.fillRect(x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
-
-                // DRAW STRUCTURES IF THEY EXIST
                 if (cell.structure) {
-                    ctx.fillStyle = "#5d4037"; // Wood color
-                    const pad = 4;
-                    ctx.fillRect(
-                        x * this.tileSize + pad, 
-                        y * this.tileSize + pad, 
-                        this.tileSize - (pad*2), 
-                        this.tileSize - (pad*2)
-                    );
-                    ctx.font = "12px Arial";
-                    ctx.fillText("🏠", x * this.tileSize + 8, y * this.tileSize + 20);
+                    ctx.font = "20px Arial";
+                    ctx.fillText("🏠", x * this.tileSize + 5, y * this.tileSize + 22);
                 }
             }
         }
