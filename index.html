@@ -3,33 +3,183 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smile-World: God Sim</title>
+    <title>Clinton Sim :: Smile-World</title>
     <style>
         body { margin: 0; background: #050505; overflow: hidden; color: #00ff00; font-family: 'Courier New', monospace; }
         canvas { display: block; }
-        #hud { position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.85); padding: 15px; border: 1px solid #333; pointer-events: none; }
-        #controls { position: absolute; bottom: 15px; left: 15px; background: rgba(0,0,0,0.85); padding: 15px; border: 1px solid #333; pointer-events: auto; }
-        input { background: #111; border: 1px solid #00ff00; color: #00ff00; padding: 8px; width: 180px; }
-        button { background: #00ff00; color: #000; border: none; padding: 8px 15px; cursor: pointer; font-weight: bold; }
-        .glitch { animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } }
+        
+        /* HUD UI */
+        #hud { 
+            position: absolute; top: 15px; left: 15px; 
+            background: rgba(0,0,0,0.9); padding: 15px; 
+            border: 1px solid #333; pointer-events: auto; 
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.1);
+        }
+        
+        #my-id { 
+            color: #fff; background: #222; 
+            padding: 2px 8px; border-radius: 4px; 
+            cursor: pointer; transition: all 0.2s;
+            border: 1px solid #444; display: inline-block;
+            margin-top: 5px;
+        }
+        #my-id:hover { background: #00ff00; color: #000; }
+        
+        /* Controls */
+        #controls { 
+            position: absolute; bottom: 15px; left: 15px; 
+            background: rgba(0,0,0,0.9); padding: 15px; 
+            border: 1px solid #333; 
+        }
+        input { 
+            background: #111; border: 1px solid #00ff00; 
+            color: #00ff00; padding: 10px; width: 220px; 
+            outline: none;
+        }
+        button { 
+            background: #00ff00; color: #000; 
+            border: none; padding: 10px 20px; 
+            cursor: pointer; font-weight: bold; 
+        }
+        button:hover { background: #fff; }
+
+        .label { font-size: 0.7em; color: #888; text-transform: uppercase; margin-bottom: 2px; }
     </style>
 </head>
 <body>
 
-    <div id="hud" class="glitch">
-        <div style="font-size: 1.2em; border-bottom: 1px solid #333; margin-bottom: 10px;">SMILE-WORLD v1.0</div>
-        <div>BRIDGE_ID: <span id="my-id" style="color: #fff;">Initializing...</span></div>
-        <div id="status" style="font-size: 0.8em; color: #888;">Scanning for peers...</div>
+    <div id="hud">
+        <div style="font-size: 1.2em; color: #00ff00; margin-bottom: 10px;">CLINTON_SIM v1.2</div>
+        <div class="label">Your Multiverse ID (Click to Copy)</div>
+        <div id="my-id">Initializing...</div>
     </div>
 
     <div id="controls">
-        <input type="text" id="target-id" placeholder="Paste Peer Bridge ID">
+        <div class="label">Cross to another world</div>
+        <input type="text" id="target-id" placeholder="Paste Bridge ID here...">
         <button id="connect-btn">OPEN WORMHOLE</button>
     </div>
 
     <canvas id="world"></canvas>
 
-    <script type="module" src="simulation.js"></script>
+    <script type="module">
+        // IMPORTING YOUR REMOTE API
+        import { SmileBridge } from 'https://clintonazabuike-creator.github.io/Smile-bridge/smile-bridge.js';
+
+        const canvas = document.getElementById('world');
+        const ctx = canvas.getContext('2d');
+        const myIdDisplay = document.getElementById('my-id');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // 1. Initialize Bridge
+        const bridge = new SmileBridge('clinton-sim');
+
+        bridge.on('ready', (id) => {
+            myIdDisplay.innerText = id;
+        });
+
+        // 2. Click-to-Copy Logic
+        myIdDisplay.onclick = () => {
+            if (myIdDisplay.innerText !== "Initializing...") {
+                navigator.clipboard.writeText(myIdDisplay.innerText);
+                const oldText = myIdDisplay.innerText;
+                myIdDisplay.innerText = "COPIED!";
+                setTimeout(() => { myIdDisplay.innerText = oldText; }, 1000);
+            }
+        };
+
+        // 3. Unit (Lifeform) Logic
+        class Unit {
+            constructor(dna = null) {
+                this.dna = dna || {
+                    id: Math.random().toString(36).substr(2, 9),
+                    color: `hsl(${Math.random() * 360}, 80%, 60%)`,
+                    size: Math.random() * 4 + 4,
+                    speed: Math.random() * 3 + 1,
+                    history: [`Origin: ${bridge.myId}`]
+                };
+                this.x = canvas.width / 2;
+                this.y = canvas.height / 2;
+                this.vx = (Math.random() - 0.5) * this.dna.speed;
+                this.vy = (Math.random() - 0.5) * this.dna.speed;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Border Migration
+                if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
+                    if (bridge.connections.size > 0) {
+                        this.migrate();
+                    } else {
+                        // Bounce if lonely
+                        if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+                        if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+                    }
+                }
+            }
+
+            draw() {
+                ctx.fillStyle = this.dna.color;
+                ctx.shadowBlur = 12;
+                ctx.shadowColor = this.dna.color;
+                ctx.fillRect(this.x, this.y, this.dna.size, this.dna.size);
+                ctx.shadowBlur = 0;
+            }
+
+            migrate() {
+                this.dna.history.push(`Passed through ${bridge.myId}`);
+                bridge.emit('MIGRATION', this.dna);
+                world.removeUnit(this);
+            }
+        }
+
+        // 4. World Controller
+        const world = {
+            units: [],
+            init() {
+                for(let i=0; i<20; i++) this.units.push(new Unit());
+                this.loop();
+            },
+            removeUnit(unit) {
+                this.units = this.units.filter(u => u.dna.id !== unit.dna.id);
+            },
+            loop() {
+                ctx.fillStyle = 'rgba(5, 5, 5, 0.15)'; // Trail effect
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                this.units.forEach(u => {
+                    u.update();
+                    u.draw();
+                });
+                requestAnimationFrame(() => this.loop());
+            }
+        };
+
+        // 5. Bridge Events
+        bridge.on('MIGRATION', (dna) => {
+            const visitor = new Unit(dna);
+            // Spawn in center
+            visitor.x = canvas.width / 2;
+            visitor.y = canvas.height / 2;
+            world.units.push(visitor);
+        });
+
+        document.getElementById('connect-btn').onclick = () => {
+            const id = document.getElementById('target-id').value;
+            if (id) bridge.cross(id);
+        };
+
+        world.init();
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
 </body>
 </html>
