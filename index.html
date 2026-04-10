@@ -3,183 +3,169 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clinton Sim :: Smile-World</title>
+    <title>Clinton Sim :: God Mode</title>
     <style>
-        body { margin: 0; background: #050505; overflow: hidden; color: #00ff00; font-family: 'Courier New', monospace; }
-        canvas { display: block; }
+        body { margin: 0; background: #050505; overflow: hidden; color: #00ff00; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        canvas { display: block; cursor: crosshair; }
         
-        /* HUD UI */
-        #hud { 
-            position: absolute; top: 15px; left: 15px; 
-            background: rgba(0,0,0,0.9); padding: 15px; 
-            border: 1px solid #333; pointer-events: auto; 
-            box-shadow: 0 0 15px rgba(0, 255, 0, 0.1);
-        }
-        
-        #my-id { 
-            color: #fff; background: #222; 
-            padding: 2px 8px; border-radius: 4px; 
-            cursor: pointer; transition: all 0.2s;
-            border: 1px solid #444; display: inline-block;
-            margin-top: 5px;
-        }
+        /* HUD & ID */
+        #hud { position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.9); padding: 12px; border: 1px solid #333; z-index: 10; }
+        #my-id { color: #fff; background: #222; padding: 4px 8px; border-radius: 4px; cursor: pointer; border: 1px solid #444; font-family: monospace; }
         #my-id:hover { background: #00ff00; color: #000; }
-        
-        /* Controls */
-        #controls { 
-            position: absolute; bottom: 15px; left: 15px; 
-            background: rgba(0,0,0,0.9); padding: 15px; 
-            border: 1px solid #333; 
-        }
-        input { 
-            background: #111; border: 1px solid #00ff00; 
-            color: #00ff00; padding: 10px; width: 220px; 
-            outline: none;
-        }
-        button { 
-            background: #00ff00; color: #000; 
-            border: none; padding: 10px 20px; 
-            cursor: pointer; font-weight: bold; 
-        }
-        button:hover { background: #fff; }
 
-        .label { font-size: 0.7em; color: #888; text-transform: uppercase; margin-bottom: 2px; }
+        /* Power Palette (The "Playable" Part) */
+        #toolbar { 
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); 
+            display: flex; gap: 10px; background: rgba(20,20,20,0.95); 
+            padding: 10px; border: 2px solid #444; border-radius: 8px;
+        }
+        .tool { 
+            width: 50px; height: 50px; border: 1px solid #555; 
+            display: flex; align-items: center; justify-content: center; 
+            cursor: pointer; background: #111; font-size: 20px; transition: 0.2s;
+        }
+        .tool:hover { border-color: #00ff00; background: #222; }
+        .tool.active { border-color: #00ff00; background: #004400; box-shadow: 0 0 10px #00ff00; }
+
+        /* Connection Box */
+        #connect-box { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.9); padding: 12px; border: 1px solid #333; }
+        input { background: #111; border: 1px solid #444; color: #00ff00; padding: 5px; width: 140px; }
+        button { background: #00ff00; color: #000; border: none; padding: 5px 10px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div id="hud">
-        <div style="font-size: 1.2em; color: #00ff00; margin-bottom: 10px;">CLINTON_SIM v1.2</div>
-        <div class="label">Your Multiverse ID (Click to Copy)</div>
+        <div style="font-weight: bold; margin-bottom: 5px;">CLINTON SIM v2.0</div>
         <div id="my-id">Initializing...</div>
     </div>
 
-    <div id="controls">
-        <div class="label">Cross to another world</div>
-        <input type="text" id="target-id" placeholder="Paste Bridge ID here...">
-        <button id="connect-btn">OPEN WORMHOLE</button>
+    <div id="connect-box">
+        <input type="text" id="target-id" placeholder="Peer ID">
+        <button id="connect-btn">CONNECT</button>
+    </div>
+
+    <div id="toolbar">
+        <div class="tool active" data-power="spawn" title="Spawn Life">🧬</div>
+        <div class="tool" data-power="bomb" title="Atomic Bomb">💥</div>
+        <div class="tool" data-power="shield" title="Force Field">🛡️</div>
+        <div class="tool" data-power="blackhole" title="Black Hole">🕳️</div>
     </div>
 
     <canvas id="world"></canvas>
 
     <script type="module">
-        // IMPORTING YOUR REMOTE API
         import { SmileBridge } from 'https://clintonazabuike-creator.github.io/Smile-bridge/smile-bridge.js';
 
         const canvas = document.getElementById('world');
         const ctx = canvas.getContext('2d');
-        const myIdDisplay = document.getElementById('my-id');
-
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
-        // 1. Initialize Bridge
-        const bridge = new SmileBridge('clinton-sim');
-
+        let currentPower = 'spawn';
+        const bridge = new SmileBridge('clinton-god-sim');
+        
+        // Setup ID Copying
         bridge.on('ready', (id) => {
-            myIdDisplay.innerText = id;
+            const el = document.getElementById('my-id');
+            el.innerText = id;
+            el.onclick = () => {
+                navigator.clipboard.writeText(id);
+                el.innerText = "COPIED!";
+                setTimeout(() => el.innerText = id, 1000);
+            };
         });
 
-        // 2. Click-to-Copy Logic
-        myIdDisplay.onclick = () => {
-            if (myIdDisplay.innerText !== "Initializing...") {
-                navigator.clipboard.writeText(myIdDisplay.innerText);
-                const oldText = myIdDisplay.innerText;
-                myIdDisplay.innerText = "COPIED!";
-                setTimeout(() => { myIdDisplay.innerText = oldText; }, 1000);
-            }
-        };
-
-        // 3. Unit (Lifeform) Logic
         class Unit {
-            constructor(dna = null) {
+            constructor(x, y, dna = null) {
                 this.dna = dna || {
-                    id: Math.random().toString(36).substr(2, 9),
                     color: `hsl(${Math.random() * 360}, 80%, 60%)`,
-                    size: Math.random() * 4 + 4,
-                    speed: Math.random() * 3 + 1,
-                    history: [`Origin: ${bridge.myId}`]
+                    size: 5,
+                    speed: Math.random() * 2 + 1
                 };
-                this.x = canvas.width / 2;
-                this.y = canvas.height / 2;
+                this.x = x;
+                this.y = y;
                 this.vx = (Math.random() - 0.5) * this.dna.speed;
                 this.vy = (Math.random() - 0.5) * this.dna.speed;
+                this.dead = false;
             }
-
             update() {
-                this.x += this.vx;
-                this.y += this.vy;
-
-                // Border Migration
+                this.x += this.vx; this.y += this.vy;
                 if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
-                    if (bridge.connections.size > 0) {
-                        this.migrate();
-                    } else {
-                        // Bounce if lonely
-                        if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
-                        if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
-                    }
+                    if (bridge.connections.size > 0) this.migrate();
+                    else { this.vx *= -1; this.vy *= -1; }
                 }
             }
-
             draw() {
                 ctx.fillStyle = this.dna.color;
-                ctx.shadowBlur = 12;
-                ctx.shadowColor = this.dna.color;
                 ctx.fillRect(this.x, this.y, this.dna.size, this.dna.size);
-                ctx.shadowBlur = 0;
             }
-
             migrate() {
-                this.dna.history.push(`Passed through ${bridge.myId}`);
                 bridge.emit('MIGRATION', this.dna);
-                world.removeUnit(this);
+                this.dead = true;
             }
         }
 
-        // 4. World Controller
         const world = {
             units: [],
-            init() {
-                for(let i=0; i<20; i++) this.units.push(new Unit());
-                this.loop();
-            },
-            removeUnit(unit) {
-                this.units = this.units.filter(u => u.dna.id !== unit.dna.id);
+            particles: [], // For explosions
+            init() { this.loop(); },
+            removeDead() { 
+                this.units = this.units.filter(u => !u.dead); 
+                this.particles = this.particles.filter(p => p.life > 0);
             },
             loop() {
-                ctx.fillStyle = 'rgba(5, 5, 5, 0.15)'; // Trail effect
+                ctx.fillStyle = 'rgba(5, 5, 5, 0.2)';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                this.units.forEach(u => {
-                    u.update();
-                    u.draw();
+                this.removeDead();
+                this.units.forEach(u => { u.update(); u.draw(); });
+                this.particles.forEach(p => {
+                    p.x += p.vx; p.y += p.vy; p.life--;
+                    ctx.fillStyle = `rgba(255, ${p.life * 2}, 0, ${p.life / 50})`;
+                    ctx.fillRect(p.x, p.y, 2, 2);
                 });
                 requestAnimationFrame(() => this.loop());
             }
         };
 
-        // 5. Bridge Events
-        bridge.on('MIGRATION', (dna) => {
-            const visitor = new Unit(dna);
-            // Spawn in center
-            visitor.x = canvas.width / 2;
-            visitor.y = canvas.height / 2;
-            world.units.push(visitor);
+        // INTERACTION LOGIC
+        canvas.addEventListener('mousedown', (e) => {
+            const { clientX: x, clientY: y } = e;
+            
+            if (currentPower === 'spawn') {
+                for(let i=0; i<5; i++) world.units.push(new Unit(x, y));
+            } 
+            else if (currentPower === 'bomb') {
+                world.units.forEach(u => {
+                    const dist = Math.hypot(u.x - x, u.y - y);
+                    if (dist < 100) u.dead = true;
+                });
+                for(let i=0; i<50; i++) {
+                    world.particles.push({ x, y, vx: (Math.random()-0.5)*10, vy: (Math.random()-0.5)*10, life: 50 });
+                }
+            }
+            else if (currentPower === 'blackhole') {
+                world.units.forEach(u => {
+                    const angle = Math.atan2(y - u.y, x - u.x);
+                    u.vx += Math.cos(angle) * 5;
+                    u.vy += Math.sin(angle) * 5;
+                });
+            }
         });
 
-        document.getElementById('connect-btn').onclick = () => {
-            const id = document.getElementById('target-id').value;
-            if (id) bridge.cross(id);
-        };
+        // Toolbar Logic
+        document.querySelectorAll('.tool').forEach(t => {
+            t.onclick = () => {
+                document.querySelector('.tool.active').classList.remove('active');
+                t.classList.add('active');
+                currentPower = t.dataset.power;
+            };
+        });
+
+        bridge.on('MIGRATION', (dna) => world.units.push(new Unit(canvas.width/2, canvas.height/2, dna)));
+        document.getElementById('connect-btn').onclick = () => bridge.cross(document.getElementById('target-id').value);
 
         world.init();
-
-        // Handle window resize
-        window.addEventListener('resize', () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        });
     </script>
 </body>
 </html>
