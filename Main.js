@@ -52,3 +52,17 @@ function gameLoop() {
 }
 
 gameLoop();
+// Add to bottom of Main.js
+console.log("Engine Started. Total Entities:", entities.length);
+
+// Emergency click-to-spawn for testing
+canvas.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const testEntity = new Entity(x, y, 'giant');
+    testEntity.isChosen = true;
+    entities.push(testEntity);
+    console.log("God spawned a Giant at", x, y);
+});
