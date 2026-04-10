@@ -1,3 +1,7 @@
+// UI.js
+
+import { SUPERNATURAL_TRAITS } from './Entities.js';
+
 export class UIController {
     constructor(entities) {
         this.entities = entities;
@@ -12,60 +16,54 @@ export class UIController {
     }
 
     initListeners() {
-        const canvas = document.getElementById('gameCanvas');
-        canvas.addEventListener('click', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-
-            const found = this.entities.find(ent => 
-                Math.hypot(ent.x - x, ent.y - y) < 30
-            );
-
-            if (found) {
-                this.select(found);
-            } else {
-                this.deselect();
-            }
-        });
+        // ... Click Listeners ...
 
         const godBtn = document.querySelector('.god-btn');
         if (godBtn) {
-            godBtn.addEventListener('click', () => this.rewriteDNA());
+            godBtn.addEventListener('click', () => this.showDivinePalette());
         }
     }
 
-    select(entity) {
-        this.selectedEntity = entity;
-        this.card.classList.remove('hidden');
-        this.updateCard();
-    }
-
-    deselect() {
-        this.selectedEntity = null;
-        this.card.classList.add('hidden');
-    }
-
-    rewriteDNA() {
+    // New Method: Shows the options to Bestow Supernatural Traits
+    showDivinePalette() {
         if (!this.selectedEntity) return;
-        const newName = prompt("Divine Intervention: Rename this soul:", this.selectedEntity.identity.name);
-        if (newName) {
-            this.selectedEntity.identity.name = newName;
-            this.selectedEntity.stats.health = 100; // God's touch heals
+        
+        let message = "BESTOW DIVINE TRAIT:\n";
+        // Convert the Registry to a readable list
+        Object.entries(SUPERNATURAL_TRAITS).forEach(([key, trait], index) => {
+            message += `${index + 1}. ${trait.icon} ${key}: ${trait.desc}\n`;
+        });
+        message += "\nEnter the NUMBER of the trait (or 'None' to cancel):";
+
+        const choice = prompt(message);
+        const index = parseInt(choice) - 1;
+        const traitKeys = Object.keys(SUPERNATURAL_TRAITS);
+
+        if (!isNaN(index) && traitKeys[index]) {
+            const selectedKey = traitKeys[index];
+            this.selectedEntity.bestowTrait(selectedKey);
             this.updateCard();
         }
     }
 
+    // ... Select and Deselect Methods ...
+
     updateCard() {
         if (!this.selectedEntity) return;
         const ent = this.selectedEntity;
+        
         this.nameEl.innerText = ent.identity.name;
-        this.traitsEl.innerHTML = ent.identity.traits.map(t => `<span class="trait-pill">${t}</span>`).join('');
+        
+        // Generate the Pilling UI for the Traits (Supernatural or Normal)
+        this.traitsEl.innerHTML = ent.identity.traits.map(t => 
+            `<span class="trait-pill" style="background:${t.color || '#d4af37'}">${t.icon || ''} ${t.id}</span>`
+        ).join('');
+        
         this.historyEl.innerHTML = `
             <li><strong>Action:</strong> ${ent.currentAction}</li>
             <li><strong>Lineage:</strong> ${ent.identity.lineage}</li>
-            <li><strong>Health:</strong> ${Math.floor(ent.stats.health)}%</li>
-            <li><strong>Inventory:</strong> ${ent.identity.acquired.join(', ') || 'None'}</li>
+            <li><strong>Health:</strong> ${ent.isChosen ? 'IMMORTAL' : Math.floor(ent.stats.health) + '%'}</li>
+            <li><strong>Traits:</strong> ${ent.identity.traits.length}</li>
         `;
     }
 }
