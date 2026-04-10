@@ -1,168 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clinton Sim :: God Mode</title>
-    <style>
-        body { margin: 0; background: #050505; overflow: hidden; color: #00ff00; font-family: 'Segoe UI', sans-serif; }
-        canvas { display: block; cursor: crosshair; }
-        
-        /* HUD & ID */
-        #hud { position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.9); padding: 12px; border: 1px solid #333; z-index: 10; }
-        #my-id { color: #fff; background: #222; padding: 4px 8px; border-radius: 4px; cursor: pointer; border: 1px solid #444; font-family: monospace; }
-        #my-id:hover { background: #00ff00; color: #000; }
-
-        /* THE BIO-CARD (Identity Window) */
-        #bio-card { 
-            display: none; position: absolute; right: 0; top: 0; width: 280px; height: 100%; 
-            background: rgba(10,10,10,0.98); border-left: 2px solid #00ff00; 
-            color: #fff; padding: 20px; z-index: 100; box-shadow: -5px 0 20px rgba(0,0,0,0.5);
-        }
-        .stat-input { background: #222; border: 1px solid #444; color: #00ff00; padding: 5px; width: 60px; margin: 5px 0; }
-        #save-bio { width: 100%; background: #00ff00; color: #000; padding: 10px; font-weight: bold; cursor: pointer; margin-top: 20px; border: none; }
-        
-        /* Tools */
-        #toolbar { 
-            position: absolute; bottom: 20px; left: 20px; 
-            display: flex; flex-direction: column; gap: 10px;
-        }
-        .tool { width: 45px; height: 45px; background: #111; border: 1px solid #444; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 20px; }
-        .tool.active { border-color: #00ff00; background: #003300; }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <canvas id="gameCanvas"></canvas>
 
-    <div id="hud">
-        <div style="font-weight: bold;">CLINTON SIM :: MULTIVERSE</div>
-        <div id="my-id">Initializing...</div>
-        <div style="font-size: 0.7em; color: #888; margin-top: 5px;">CLICK A HUMAN TO EDIT DNA</div>
+    <div id="ui-layer">
+        <div id="bio-card" class="hidden">
+            <h1 id="ent-name">Entity Name</h1>
+            <div id="ent-traits"></div>
+            <div id="ent-stats">
+                </div>
+            <div id="ent-history">
+                <h3>Lineage & Acquisitions</h3>
+                <ul id="history-list"></ul>
+            </div>
+            <button class="god-btn">REWRITE DNA</button>
+        </div>
     </div>
 
-    <div id="bio-card">
-        <button onclick="document.getElementById('bio-card').style.display='none'" style="float: right; background: none; color: red; border: none; font-size: 20px; cursor: pointer;">×</button>
-        <h2 id="bio-name" style="color: #00ff00; margin-top: 0;">Name</h2>
-        <p id="bio-role" style="font-size: 0.8em; color: #aaa;">Wanderer</p>
-        <hr border="0.1" color="#333">
-        
-        <label>Health:</label><br>
-        <input type="number" id="edit-health" class="stat-input"> / 100<br>
-        <label>Hunger:</label><br>
-        <input type="number" id="edit-hunger" class="stat-input"><br>
-        <label>Title:</label><br>
-        <input type="text" id="edit-role" class="stat-input" style="width: 150px;"><br>
-        
-        <p style="font-size: 0.9em; margin-top: 20px;"><strong>Lineage:</strong><br><span id="bio-parents" style="color: #888;"></span></p>
-        <p style="font-size: 0.9em;"><strong>Inventory:</strong><br><span id="bio-inv" style="color: #888;"></span></p>
-        
-        <button id="save-bio">APPLY DIVINE CHANGES</button>
-    </div>
-
-    <div id="toolbar">
-        <div class="tool active" onclick="setPower('spawn')">👨</div>
-        <div class="tool" onclick="setPower('wolf')">🐺</div>
-    </div>
-
-    <canvas id="world"></canvas>
-
-    <script type="module">
-        import { SmileBridge } from 'https://clintonazabuike-creator.github.io/Smile-bridge/smile-bridge.js';
-
-        const canvas = document.getElementById('world');
-        const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-
-        let selectedPower = 'spawn';
-        let selectedUnit = null;
-        const bridge = new SmileBridge('clinton-sim');
-
-        bridge.on('ready', (id) => {
-            const el = document.getElementById('my-id');
-            el.innerText = id;
-            el.onclick = () => { navigator.clipboard.writeText(id); el.innerText = "COPIED!"; setTimeout(() => el.innerText = id, 1000); };
-        });
-
-        class Entity {
-            constructor(x, y, type, dna = null) {
-                this.x = x; this.y = y; this.type = type;
-                this.id = Math.random().toString(36).substr(2, 5);
-                this.name = dna?.name || (type === 'human' ? this.genName() : "Wild Wolf");
-                this.health = dna?.health || 100;
-                this.hunger = dna?.hunger || 0;
-                this.role = dna?.role || (type === 'human' ? "Peasant" : "Hunter");
-                this.parents = dna?.parents || "Primordial Source";
-                this.inventory = dna?.inventory || ["Cloth"];
-                this.sprite = type === 'human' ? "👨" : "🐺";
-            }
-            genName() {
-                const pre = ["Butler", "Clinton", "Azubuike", "Mckennedy", "Obi"];
-                return pre[Math.floor(Math.random()*pre.length)] + "_" + this.id;
-            }
-            update() {
-                this.x += (Math.random() - 0.5) * 2;
-                this.y += (Math.random() - 0.5) * 2;
-                this.hunger += 0.005;
-                if (this.hunger > 100) this.health -= 0.1;
-            }
-            draw() {
-                ctx.font = "20px Arial";
-                ctx.fillText(this.sprite, this.x, this.y);
-                if (selectedUnit === this) {
-                    ctx.strokeStyle = "#00ff00";
-                    ctx.strokeRect(this.x - 5, this.y - 20, 25, 25);
-                }
-            }
-        }
-
-        const world = {
-            entities: [],
-            loop() {
-                ctx.fillStyle = '#050505'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-                this.entities.forEach(e => { e.update(); e.draw(); });
-                requestAnimationFrame(() => this.loop());
-            }
-        };
-
-        window.setPower = (p) => {
-            selectedPower = p;
-            document.querySelectorAll('.tool').forEach(t => t.classList.remove('active'));
-            event.currentTarget.classList.add('active');
-        };
-
-        canvas.addEventListener('mousedown', (e) => {
-            const x = e.clientX, y = e.clientY;
-            // Check for click on entity
-            let clicked = world.entities.find(en => Math.hypot(en.x - x, en.y - y) < 25);
-            
-            if (clicked) {
-                selectedUnit = clicked;
-                showBio(clicked);
-            } else {
-                world.entities.push(new Entity(x, y, selectedPower === 'spawn' ? 'human' : 'wolf'));
-            }
-        });
-
-        function showBio(unit) {
-            const card = document.getElementById('bio-card');
-            card.style.display = 'block';
-            document.getElementById('bio-name').innerText = unit.name;
-            document.getElementById('bio-role').innerText = "Role: " + unit.role;
-            document.getElementById('edit-health').value = Math.floor(unit.health);
-            document.getElementById('edit-hunger').value = Math.floor(unit.hunger);
-            document.getElementById('edit-role').value = unit.role;
-            document.getElementById('bio-parents').innerText = unit.parents;
-            document.getElementById('bio-inv').innerText = unit.inventory.join(", ");
-
-            document.getElementById('save-bio').onclick = () => {
-                unit.health = Number(document.getElementById('edit-health').value);
-                unit.hunger = Number(document.getElementById('edit-hunger').value);
-                unit.role = document.getElementById('edit-role').value;
-                alert("DNA REWRITTEN");
-            };
-        }
-
-        world.loop();
-    </script>
+    <script type="module" src="js/Main.js"></script>
 </body>
 </html>
