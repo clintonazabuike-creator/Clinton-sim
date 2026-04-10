@@ -1,0 +1,20 @@
+:root {
+    --gold: #d4af37;
+    --panel: rgba(255, 255, 255, 0.1);
+}
+
+body { margin: 0; background: #1a1a1a; font-family: 'Inter', sans-serif; }
+
+/* The Bio-Card Sidebar */
+#bio-card {
+    position: fixed; right: 20px; top: 20px; bottom: 20px;
+    width: 350px; background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(10px); border: 1px solid var(--gold);
+    border-radius: 12px; color: white; padding: 25px;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.trait-pill {
+    background: var(--gold); color: black;
+    padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold;
+}
