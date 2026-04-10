@@ -10,7 +10,6 @@ export class UIController {
         this.nameEl = document.getElementById('ent-name');
         this.traitsEl = document.getElementById('ent-traits');
         this.historyEl = document.getElementById('history-list');
-        this.actionEl = document.getElementById('ent-action'); // Ensure this ID exists in HTML
         
         this.initListeners();
     }
@@ -23,15 +22,22 @@ export class UIController {
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
 
-            // Raycasting: Find the entity at click coordinates
+            // Raycasting: Scan for entities
             const found = this.entities.find(ent => 
-                Math.hypot(ent.x - x, ent.y - y) < 20
+                Math.hypot(ent.x - x, ent.y - y) < 25
             );
 
             if (found) {
                 this.select(found);
             } else {
                 this.deselect();
+            }
+        });
+
+        // Divine Rewrite Logic
+        document.querySelector('.god-btn').addEventListener('click', () => {
+            if (this.selectedEntity) {
+                this.rewriteDNA();
             }
         });
     }
@@ -47,26 +53,35 @@ export class UIController {
         this.card.classList.add('hidden');
     }
 
+    rewriteDNA() {
+        const newName = prompt("Enter New Name:", this.selectedEntity.identity.name);
+        const newTitle = prompt("Enter New Title:", this.selectedEntity.identity.title);
+        
+        if (newName) this.selectedEntity.identity.name = newName;
+        if (newTitle) this.selectedEntity.identity.title = newTitle;
+        
+        // Instant stat restoration
+        this.selectedEntity.stats.health = 100;
+        this.selectedEntity.stats.hunger = 0;
+        
+        this.updateCard();
+    }
+
     updateCard() {
         if (!this.selectedEntity) return;
-
         const ent = this.selectedEntity;
         
-        // Populate High-End Identity Data
         this.nameEl.innerText = ent.identity.name;
         this.traitsEl.innerHTML = ent.identity.traits.map(t => 
             `<span class="trait-pill">${t}</span>`
         ).join('');
         
         this.historyEl.innerHTML = `
+            <li><strong>Current Status:</strong> ${ent.currentAction}</li>
             <li><strong>Lineage:</strong> ${ent.identity.lineage}</li>
-            <li><strong>Status:</strong> ${ent.currentAction}</li>
+            <li><strong>Title:</strong> ${ent.identity.title}</li>
             <li><strong>Acquired:</strong> ${ent.identity.acquired.join(', ')}</li>
+            <li><strong>Health:</strong> ${Math.floor(ent.stats.health)}%</li>
         `;
-
-        // Update Stats Bars (If you have them in HTML)
-        const healthBar = document.getElementById('health-fill');
-        if (healthBar) healthBar.style.width = `${ent.stats.health}%`;
     }
 }
-
