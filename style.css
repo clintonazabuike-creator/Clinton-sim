@@ -1,34 +1,6 @@
-/* style.css */
-:root {
-    --gold: #d4af37;
-    --bg-dark: rgba(10, 10, 10, 0.9);
+/* style.css - Add this */
+canvas {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    display: block;
 }
-
-body { margin: 0; background: #000; overflow: hidden; font-family: 'Inter', sans-serif; }
-
-#gameCanvas { display: block; }
-
-.hidden { transform: translateX(400px); opacity: 0; pointer-events: none; }
-
-#bio-card {
-    position: fixed; right: 20px; top: 20px; bottom: 20px;
-    width: 320px; background: var(--bg-dark);
-    backdrop-filter: blur(15px); border: 1px solid rgba(212, 175, 55, 0.4);
-    border-radius: 16px; color: white; padding: 24px;
-    transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
-    box-shadow: -10px 0 30px rgba(0,0,0,0.5);
-    z-index: 1000;
-}
-
-#ent-name { font-size: 24px; margin: 0; color: var(--gold); letter-spacing: 1px; }
-.trait-pill { background: var(--gold); color: #000; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-right: 5px; }
-
-#history-list { list-style: none; padding: 0; margin-top: 20px; font-size: 14px; line-height: 1.8; color: #ccc; }
-#history-list li { border-bottom: 1px solid rgba(255,255,255,0.1); padding: 8px 0; }
-
-.god-btn {
-    width: 100%; margin-top: 20px; background: transparent; 
-    border: 1px solid var(--gold); color: var(--gold);
-    padding: 12px; cursor: pointer; transition: 0.3s;
-}
-.god-btn:hover { background: var(--gold); color: #000; }
